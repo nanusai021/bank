@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Transcription Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --border: #1e1e2e;
+    --accent: #7c3aed;
+    --accent2: #06b6d4;
+    --accent3: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --success: #10b981;
+    --error: #ef4444;
+    --glow: rgba(124,58,237,0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,58,237,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,58,237,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Ambient glow top */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 800px;
+    height: 400px;
+    background: radial-gradient(ellipse, rgba(124,58,237,0.15) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 24px;
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    margin-bottom: 56px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .logo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(124,58,237,0.15);
+    border: 1px solid rgba(124,58,237,0.3);
+    border-radius: 100px;
+    padding: 6px 16px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 24px;
+  }
+
+  .logo-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent2);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  h1 {
+    font-size: clamp(36px, 6vw, 64px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -2px;
+    background: linear-gradient(135deg, #fff 30%, var(--accent) 70%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+  }
+
+  .subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+  }
+
+  /* Engine selector */
+  .engine-section {
+    margin-bottom: 28px;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .engine-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .engine-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .engine-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .engine-card:hover:not(.unavailable) { border-color: var(--accent); transform: translateY(-2px); }
+  .engine-card.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 8px 32px var(--glow); }
+  .engine-card.unavailable { opacity: 0.4; cursor: not-allowed; }
+
+  .engine-inner { position: relative; z-index: 1; }
+
+  .engine-type {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 100px;
+    display: inline-block;
+    margin-bottom: 10px;
+  }
+
+  .engine-type.local { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
+  .engine-type.api { background: rgba(6,182,212,0.15); color: var(--accent2); border: 1px solid rgba(6,182,212,0.3); }
+
+  .engine-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .engine-desc {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* Options panel */
+  .options-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 28px;
+    animation: fadeUp 0.6s 0.15s ease both;
+  }
+
+  .options-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .option-group { display: flex; flex-direction: column; gap: 8px; }
+
+  label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  select, input[type="text"], input[type="password"] {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  select:focus, input:focus { border-color: var(--accent); }
+  select option { background: #1e1e2e; }
+
+  .hidden { display: none !important; }
+
+  /* Drop Zone */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 20px;
+    padding: 64px 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    background: var(--surface);
+    animation: fadeUp 0.6s 0.2s ease both;
+    overflow: hidden;
+  }
+
+  .drop-zone::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(124,58,237,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .drop-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(124,58,237,0.08);
+    transform: scale(1.01);
+    box-shadow: 0 0 60px rgba(124,58,237,0.2), inset 0 0 40px rgba(124,58,237,0.05);
+  }
+
+  .drop-zone.has-file {
+    border-color: var(--success);
+    border-style: solid;
+  }
+
+  .drop-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 24px;
+    background: rgba(124,58,237,0.15);
+    border: 1px solid rgba(124,58,237,0.3);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    transition: all 0.3s ease;
+  }
+
+  .drop-zone.dragover .drop-icon {
+    background: rgba(124,58,237,0.3);
+    transform: scale(1.1) rotate(-5deg);
+  }
+
+  .drop-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+  }
+
+  .drop-subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 24px;
+  }
+
+  .format-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+  }
+
+  .chip {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 100px;
+    border: 1px solid;
+    letter-spacing: 1px;
+  }
+
+  .chip.audio { color: var(--accent2); border-color: rgba(6,182,212,0.3); background: rgba(6,182,212,0.08); }
+  .chip.video { color: var(--accent3); border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.08); }
+
+  input[type="file"] { display: none; }
+
+  /* File preview */
+  .file-preview {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    background: rgba(16,185,129,0.08);
+    border: 1px solid rgba(16,185,129,0.2);
+    border-radius: 12px;
+    margin-top: 16px;
+    text-align: left;
+  }
+
+  .file-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .file-icon.audio { background: rgba(6,182,212,0.15); }
+  .file-icon.video { background: rgba(245,158,11,0.15); }
+
+  .file-info { flex: 1; min-width: 0; }
+  .file-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .file-size { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .remove-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px;
+    border-radius: 6px;
+    transition: color 0.2s;
+  }
+  .remove-btn:hover { color: var(--error); }
+
+  /* Transcribe Button */
+  .transcribe-btn {
+    width: 100%;
+    padding: 18px;
+    margin-top: 24px;
+    background: linear-gradient(135deg, var(--accent), #6d28d9);
+    border: none;
+    border-radius: 14px;
+    color: #fff;
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.6s 0.25s ease both;
+  }
+
+  .transcribe-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .transcribe-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(124,58,237,0.5);
+  }
+
+  .transcribe-btn:hover:not(:disabled)::before { opacity: 1; }
+  .transcribe-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* Progress */
+  .progress-bar-wrap {
+    width: 100%;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 16px;
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.4s ease;
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { filter: brightness(1); }
+    50% { filter: brightness(1.3); }
+    100% { filter: brightness(1); }
+  }
+
+  .status-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 10px;
+  }
+
+  /* Results */
+  .results-section {
+    margin-top: 40px;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .results-title {
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .results-title .badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 3px 10px;
+    background: rgba(16,185,129,0.15);
+    border: 1px solid rgba(16,185,129,0.3);
+    color: var(--success);
+    border-radius: 100px;
+  }
+
+  .results-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .action-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .transcript-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text);
+    min-height: 120px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .meta-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .meta-item span {
+    color: var(--accent2);
+    font-weight: 500;
+  }
+
+  /* Segments toggle */
+  .segments-toggle {
+    margin-top: 20px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .segments-header {
+    padding: 14px 20px;
+    background: var(--surface);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 600;
+    user-select: none;
+    transition: background 0.2s;
+  }
+  .segments-header:hover { background: rgba(255,255,255,0.03); }
+
+  .segments-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  .segments-content.open { max-height: 400px; overflow-y: auto; }
+
+  .segment {
+    display: flex;
+    gap: 16px;
+    padding: 10px 20px;
+    border-top: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  .segment:hover { background: rgba(255,255,255,0.02); }
+
+  .seg-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    white-space: nowrap;
+    margin-top: 2px;
+    min-width: 100px;
+  }
+
+  .seg-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* Error */
+  .error-box {
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.25);
+    border-radius: 12px;
+    padding: 16px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: #fca5a5;
+    margin-top: 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--success);
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--success);
+    z-index: 100;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Waveform animation during processing */
+  .waveform {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    justify-content: center;
+    height: 30px;
+    margin: 16px 0;
+  }
+
+  .wave-bar {
+    width: 3px;
+    background: var(--accent);
+    border-radius: 2px;
+    animation: wave 1.2s ease-in-out infinite;
+  }
+
+  .wave-bar:nth-child(1) { animation-delay: 0s; }
+  .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+  .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+  .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+  .wave-bar:nth-child(5) { animation-delay: 0.4s; }
+  .wave-bar:nth-child(6) { animation-delay: 0.5s; }
+  .wave-bar:nth-child(7) { animation-delay: 0.4s; }
+  .wave-bar:nth-child(8) { animation-delay: 0.3s; }
+  .wave-bar:nth-child(9) { animation-delay: 0.2s; }
+  .wave-bar:nth-child(10) { animation-delay: 0.1s; }
+
+  @keyframes wave {
+    0%, 100% { height: 4px; }
+    50% { height: 24px; }
+  }
+
+  @media (max-width: 640px) {
+    .engine-grid { grid-template-columns: 1fr; }
+    .options-row { grid-template-columns: 1fr; }
+    .results-header { flex-direction: column; gap: 12px; align-items: flex-start; }
+  }
+
+  /* Branch metadata panel */
+  .branch-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 28px;
+    animation: fadeUp 0.6s 0.18s ease both;
+  }
+  .options-row-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  @media (max-width: 640px) { .options-row-3 { grid-template-columns: 1fr; } }
+
+  /* Analysis results panel */
+  .analysis-panel {
+    background: rgba(6,182,212,0.06);
+    border: 1px solid rgba(6,182,212,0.2);
+    border-radius: 16px;
+    padding: 24px;
+    margin-top: 28px;
+  }
+  .analysis-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--accent2);
+  }
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 640px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+  .kpi-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+  }
+  .kpi-value {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--accent2);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .kpi-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .kpi-card.warn .kpi-value { color: var(--accent3); }
+  .kpi-card.danger .kpi-value { color: var(--error); }
+  .kpi-card.good .kpi-value { color: var(--success); }
+
+  /* CSV downloads */
+  .csv-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .csv-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: 1px solid rgba(16,185,129,0.35);
+    background: rgba(16,185,129,0.08);
+    color: var(--success);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+  .csv-btn:hover { background: rgba(16,185,129,0.18); border-color: var(--success); }
+  .flag-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .flag-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 4px 12px;
+    border-radius: 100px;
+    border: 1px solid;
+    letter-spacing: 1px;
+  }
+  .flag-pill.ok    { color: var(--success); border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.08); }
+  .flag-pill.alert { color: var(--error);   border-color: rgba(239,68,68,0.3);  background: rgba(239,68,68,0.08); }
+  .flag-pill.warn  { color: var(--accent3); border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.08); }
+  .llm-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    padding: 3px 10px;
+    border-radius: 100px;
+    border: 1px solid rgba(124,58,237,0.4);
+    background: rgba(124,58,237,0.12);
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo-badge">Transcription Studio</div>
+    <h1>Transcribe<br/>Anything</h1>
+    <p class="subtitle">// audio & video → text · powered by Sarvam.ai + Whisper</p>
+  </header>
+
+  <!-- Engine Selector -->
+  <div class="engine-section">
+    <p class="section-label">// Select Engine</p>
+    <div class="engine-grid" id="engineGrid">
+      <!-- Populated by JS -->
+      <div class="engine-card" style="padding:32px;text-align:center;opacity:0.4">
+        <div class="engine-desc">Loading engines...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Options -->
+  <div class="options-panel">
+    <p class="section-label" style="margin-bottom:16px">// Configuration</p>
+
+    <!-- Whisper / Faster-Whisper options -->
+    <div id="localOptions">
+      <div class="options-row">
+        <div class="option-group">
+          <label>Model Size</label>
+          <select id="modelSelect">
+            <option value="tiny">tiny — fastest, less accurate</option>
+            <option value="base" selected>base — balanced</option>
+            <option value="small">small — more accurate</option>
+            <option value="medium">medium — very accurate</option>
+            <option value="large">large — best quality</option>
+          </select>
+        </div>
+        <div class="option-group">
+          <label>Language (optional)</label>
+          <input type="text" id="languageInput" placeholder="auto-detect (e.g. en, hi, te...)" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Sarvam options -->
+    <div id="sarvamOptions" class="hidden">
+      <div class="options-row">
+        <div class="option-group">
+          <label>Sarvam API Key</label>
+          <input type="password" id="sarvamKey" placeholder="Enter your sarvam.ai API key" />
+        </div>
+        <div class="option-group">
+          <label>Language</label>
+          <select id="sarvamLang">
+            <option value="hi-IN">Hindi (hi-IN)</option>
+            <option value="en-IN">English India (en-IN)</option>
+            <option value="te-IN">Telugu (te-IN)</option>
+            <option value="ta-IN">Tamil (ta-IN)</option>
+            <option value="kn-IN">Kannada (kn-IN)</option>
+            <option value="ml-IN">Malayalam (ml-IN)</option>
+            <option value="bn-IN">Bengali (bn-IN)</option>
+            <option value="mr-IN">Marathi (mr-IN)</option>
+            <option value="gu-IN">Gujarati (gu-IN)</option>
+            <option value="pa-IN">Punjabi (pa-IN)</option>
+            <option value="od-IN">Odia (od-IN)</option>
+          </select>
+        </div>
+      </div>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-top:12px;">
+        Get a free API key at <a href="https://sarvam.ai" target="_blank" style="color:var(--accent2)">sarvam.ai</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Branch Metadata -->
+  <div class="branch-panel">
+    <p class="section-label" style="margin-bottom:16px">// Branch & Huddle Details</p>
+    <div class="options-row-3">
+      <div class="option-group">
+        <label>Huddle Date</label>
+        <input type="text" id="huddleDate" placeholder="YYYY-MM-DD" />
+      </div>
+      <div class="option-group">
+        <label>Branch ID</label>
+        <input type="text" id="branchId" placeholder="e.g. YBL00000" />
+      </div>
+      <div class="option-group">
+        <label>Branch Name</label>
+        <input type="text" id="branchName" placeholder="e.g. Maharashtra_Branch_1" />
+      </div>
+    </div>
+    <div class="options-row-3">
+      <div class="option-group">
+        <label>State</label>
+        <input type="text" id="branchState" placeholder="e.g. Maharashtra" />
+      </div>
+      <div class="option-group">
+        <label>Branch Type</label>
+        <select id="branchType">
+          <option value="Metro">Metro</option>
+          <option value="Urban">Urban</option>
+          <option value="Semi-Urban">Semi-Urban</option>
+          <option value="Rural">Rural</option>
+        </select>
+      </div>
+      <div class="option-group">
+        <label>Cluster</label>
+        <input type="text" id="branchCluster" placeholder="e.g. West" />
+      </div>
+    </div>
+    <div class="option-group" style="margin-top:4px;">
+      <label>Anthropic API Key <span style="color:var(--accent);font-size:9px;margin-left:6px;">OPTIONAL · enables LLM enrichment</span></label>
+      <input type="password" id="anthropicKey" placeholder="sk-ant-... (leave blank to use rule-based analysis only)" />
+    </div>
+  </div>
+
+  <!-- Drop Zone -->
+  <div class="drop-zone" id="dropZone">
+    <div class="drop-icon">🎙️</div>
+    <div class="drop-title">Drop your file here</div>
+    <div class="drop-subtitle">or click to browse</div>
+    <div class="format-chips">
+      <span class="chip audio">MP3</span>
+      <span class="chip audio">WAV</span>
+      <span class="chip audio">OGG</span>
+      <span class="chip audio">FLAC</span>
+      <span class="chip audio">M4A</span>
+      <span class="chip audio">AAC</span>
+      <span class="chip video">MP4</span>
+      <span class="chip video">MKV</span>
+      <span class="chip video">MOV</span>
+      <span class="chip video">AVI</span>
+      <span class="chip video">WEBM</span>
+    </div>
+    <input type="file" id="fileInput" accept="audio/*,video/*,.mkv,.flv,.wmv" />
+    <div id="filePreview" class="hidden"></div>
+  </div>
+
+  <!-- Processing indicator -->
+  <div id="processingDiv" class="hidden" style="margin-top:20px;text-align:center;">
+    <div class="waveform">
+      <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+      <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+      <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+      <div class="wave-bar"></div>
+    </div>
+    <div class="status-text" id="statusText">Processing your file...</div>
+    <div class="progress-bar-wrap" style="margin-top:12px;">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+  </div>
+
+  <!-- Transcribe Button -->
+  <button class="transcribe-btn" id="transcribeBtn" disabled>
+    ⚡ TRANSCRIBE
+  </button>
+
+  <!-- Error -->
+  <div id="errorBox" class="hidden error-box">
+    <span>⚠</span>
+    <span id="errorText"></span>
+  </div>
+
+  <!-- Results -->
+  <div id="resultsSection" class="results-section hidden">
+    <div class="results-header">
+      <div class="results-title">
+        Transcript <span class="badge">✓ DONE</span>
+      </div>
+      <div class="results-actions">
+        <button class="action-btn" id="copyBtn">📋 Copy</button>
+        <button class="action-btn" id="downloadTxtBtn">⬇ TXT</button>
+        <button class="action-btn" id="downloadSrtBtn">⬇ SRT</button>
+      </div>
+    </div>
+
+    <div class="meta-row" id="metaRow"></div>
+
+    <div class="transcript-box" id="transcriptBox"></div>
+
+    <div class="segments-toggle" id="segmentsToggle">
+      <div class="segments-header" id="segmentsHeader">
+        <span>Timestamps / Segments</span>
+        <span id="segArrow">▸</span>
+      </div>
+      <div class="segments-content" id="segmentsContent"></div>
+    </div>
+
+    <!-- Analysis Panel -->
+    <div class="analysis-panel hidden" id="analysisPanel">
+      <div class="analysis-title">
+        📊 Huddle Analysis
+        <span class="llm-badge hidden" id="llmBadge">✦ LLM ENRICHED</span>
+      </div>
+
+      <div class="kpi-grid" id="kpiGrid"></div>
+
+      <div class="flag-row" id="flagRow"></div>
+
+      <p class="section-label" style="margin-bottom:10px">// Download Generated CSVs</p>
+      <div class="csv-row">
+        <a class="csv-btn" href="/export/daily_log" download>⬇ huddle_daily_log.csv</a>
+        <a class="csv-btn" href="/export/staff_performance" download>⬇ huddle_staff_performance.csv</a>
+        <a class="csv-btn" href="/export/blockers" download>⬇ huddle_blockers.csv</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:8000';
+let selectedEngine = null;
+let selectedFile = null;
+let transcriptData = null;
+let enginesData = [];
+
+// Pre-fill today's date
+document.getElementById('huddleDate').value = new Date().toISOString().slice(0, 10);
+
+// Load engines
+async function loadEngines() {
+  try {
+    const resp = await fetch(`${API}/engines`);
+    const data = await resp.json();
+    enginesData = data.engines;
+    renderEngines();
+  } catch (e) {
+    document.getElementById('engineGrid').innerHTML =
+      `<div style="grid-column:1/-1;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--error);padding:20px;">
+        Cannot connect to backend. Make sure the Python server is running on port 8000.
+       </div>`;
+  }
+}
+
+function renderEngines() {
+  const grid = document.getElementById('engineGrid');
+  grid.innerHTML = '';
+  enginesData.forEach(engine => {
+    const card = document.createElement('div');
+    card.className = `engine-card${engine.available ? '' : ' unavailable'}`;
+    card.innerHTML = `
+      <div class="engine-inner">
+        <div class="engine-type ${engine.type}">${engine.type}</div>
+        <div class="engine-name">${engine.name}</div>
+        <div class="engine-desc">${engine.description}</div>
+      </div>
+    `;
+    if (engine.available) {
+      card.addEventListener('click', () => selectEngine(engine.id));
+    }
+    grid.appendChild(card);
+  });
+
+  // Default select first available
+  const first = enginesData.find(e => e.available);
+  if (first) selectEngine(first.id);
+}
+
+function selectEngine(id) {
+  selectedEngine = id;
+  document.querySelectorAll('.engine-card').forEach((c, i) => {
+    c.classList.toggle('active', enginesData[i]?.id === id);
+  });
+
+  const isSarvam = id === 'sarvam';
+  document.getElementById('localOptions').classList.toggle('hidden', isSarvam);
+  document.getElementById('sarvamOptions').classList.toggle('hidden', !isSarvam);
+  updateTranscribeBtn();
+}
+
+// Drop Zone
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('click', (e) => {
+  if (!e.target.closest('#filePreview')) fileInput.click();
+});
+
+dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropZone.classList.add('dragover');
+});
+
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+});
+
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) handleFile(fileInput.files[0]);
+});
+
+function handleFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  const audioExts = ['mp3','wav','ogg','flac','m4a','aac','opus','wma'];
+  const videoExts = ['mp4','mkv','avi','mov','webm','flv','wmv','3gp'];
+  const isAudio = audioExts.includes(ext);
+  const isVideo = videoExts.includes(ext);
+
+  if (!isAudio && !isVideo) {
+    showError(`Unsupported file type: .${ext}`);
+    return;
+  }
+
+  selectedFile = file;
+  dropZone.classList.add('has-file');
+  const preview = document.getElementById('filePreview');
+  preview.className = 'file-preview';
+  const icon = isAudio ? '🎵' : '🎬';
+  const type = isAudio ? 'audio' : 'video';
+  preview.innerHTML = `
+    <div class="file-icon ${type}">${icon}</div>
+    <div class="file-info">
+      <div class="file-name">${file.name}</div>
+      <div class="file-size">${formatSize(file.size)} · .${ext.toUpperCase()}</div>
+    </div>
+    <button class="remove-btn" id="removeBtn">✕</button>
+  `;
+  document.getElementById('removeBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    removeFile();
+  });
+  updateTranscribeBtn();
+}
+
+function removeFile() {
+  selectedFile = null;
+  fileInput.value = '';
+  dropZone.classList.remove('has-file');
+  document.getElementById('filePreview').className = 'hidden';
+  updateTranscribeBtn();
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/(1024*1024)).toFixed(1) + ' MB';
+}
+
+function updateTranscribeBtn() {
+  const btn = document.getElementById('transcribeBtn');
+  btn.disabled = !selectedFile || !selectedEngine;
+}
+
+// Transcribe
+document.getElementById('transcribeBtn').addEventListener('click', async () => {
+  if (!selectedFile || !selectedEngine) return;
+  hideError();
+  document.getElementById('resultsSection').classList.add('hidden');
+
+  const btn = document.getElementById('transcribeBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ TRANSCRIBING...';
+
+  const proc = document.getElementById('processingDiv');
+  proc.classList.remove('hidden');
+  animateProgress();
+
+  const formData = new FormData();
+  formData.append('file', selectedFile);
+  formData.append('engine', selectedEngine);
+  formData.append('whisper_model', document.getElementById('modelSelect').value);
+  formData.append('language', document.getElementById('languageInput').value);
+  formData.append('sarvam_api_key', document.getElementById('sarvamKey').value);
+  formData.append('sarvam_language', document.getElementById('sarvamLang').value);
+  formData.append('huddle_date',     document.getElementById('huddleDate').value);
+  formData.append('branch_id',       document.getElementById('branchId').value);
+  formData.append('branch_name',     document.getElementById('branchName').value);
+  formData.append('branch_state',    document.getElementById('branchState').value);
+  formData.append('branch_type',     document.getElementById('branchType').value);
+  formData.append('cluster',         document.getElementById('branchCluster').value);
+  formData.append('anthropic_api_key', document.getElementById('anthropicKey').value);
+
+  try {
+    document.getElementById('statusText').textContent = 'Uploading file...';
+    const resp = await fetch(`${API}/transcribe`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json();
+      throw new Error(err.detail || 'Transcription failed');
+    }
+
+    transcriptData = await resp.json();
+    showResults(transcriptData);
+    if (transcriptData.analysis) showAnalysis(transcriptData.analysis);
+  } catch (e) {
+    showError(e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⚡ TRANSCRIBE';
+    proc.classList.add('hidden');
+    document.getElementById('progressBar').style.width = '0%';
+  }
+});
+
+let progressInterval;
+function animateProgress() {
+  let p = 0;
+  const bar = document.getElementById('progressBar');
+  const status = document.getElementById('statusText');
+  const messages = [
+    'Loading model...',
+    'Analyzing audio...',
+    'Running transcription...',
+    'Processing segments...',
+    'Finalizing...'
+  ];
+  let msgIdx = 0;
+  clearInterval(progressInterval);
+  progressInterval = setInterval(() => {
+    // Slow approach to 90%
+    if (p < 90) p += Math.random() * 3;
+    bar.style.width = Math.min(p, 90) + '%';
+    if (Math.random() < 0.05 && msgIdx < messages.length - 1) {
+      status.textContent = messages[++msgIdx];
+    }
+  }, 400);
+}
+
+function showResults(data) {
+  clearInterval(progressInterval);
+  document.getElementById('progressBar').style.width = '100%';
+  document.getElementById('statusText').textContent = 'Done!';
+
+  const section = document.getElementById('resultsSection');
+  section.classList.remove('hidden');
+
+  // Meta
+  const meta = document.getElementById('metaRow');
+  meta.innerHTML = `
+    <div class="meta-item">Engine: <span>${data.engine}</span></div>
+    <div class="meta-item">Language: <span>${data.language || 'auto'}</span></div>
+    <div class="meta-item">File: <span>${data.filename}</span></div>
+    <div class="meta-item">Segments: <span>${data.segments?.length || 0}</span></div>
+  `;
+
+  // Transcript
+  document.getElementById('transcriptBox').textContent = data.text || '(No transcript returned)';
+
+  // Segments
+  const content = document.getElementById('segmentsContent');
+  if (data.segments && data.segments.length > 0) {
+    content.innerHTML = data.segments.map(seg => `
+      <div class="segment">
+        <div class="seg-time">${formatTime(seg.start)} → ${formatTime(seg.end)}</div>
+        <div class="seg-text">${seg.text}</div>
+      </div>
+    `).join('');
+    document.getElementById('segmentsToggle').style.display = '';
+  } else {
+    document.getElementById('segmentsToggle').style.display = 'none';
+  }
+
+  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function formatTime(secs) {
+  if (!secs && secs !== 0) return '--:--';
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = Math.floor(secs % 60);
+  if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+// Segments toggle
+document.getElementById('segmentsHeader').addEventListener('click', () => {
+  const content = document.getElementById('segmentsContent');
+  const arrow = document.getElementById('segArrow');
+  content.classList.toggle('open');
+  arrow.textContent = content.classList.contains('open') ? '▾' : '▸';
+});
+
+// Actions
+document.getElementById('copyBtn').addEventListener('click', () => {
+  if (!transcriptData) return;
+  navigator.clipboard.writeText(transcriptData.text);
+  showToast('Copied to clipboard!');
+});
+
+document.getElementById('downloadTxtBtn').addEventListener('click', () => {
+  if (!transcriptData) return;
+  download(transcriptData.text, `${selectedFile.name}_transcript.txt`, 'text/plain');
+});
+
+document.getElementById('downloadSrtBtn').addEventListener('click', () => {
+  if (!transcriptData || !transcriptData.segments) return;
+  const srt = transcriptData.segments.map((seg, i) => {
+    return `${i+1}\n${toSrtTime(seg.start)} --> ${toSrtTime(seg.end)}\n${seg.text}\n`;
+  }).join('\n');
+  download(srt, `${selectedFile.name}_transcript.srt`, 'text/plain');
+});
+
+function toSrtTime(secs) {
+  if (!secs && secs !== 0) return '00:00:00,000';
+  const h = Math.floor(secs/3600);
+  const m = Math.floor((secs%3600)/60);
+  const s = Math.floor(secs%60);
+  const ms = Math.round((secs%1)*1000);
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')},${String(ms).padStart(3,'0')}`;
+}
+
+function download(content, filename, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type }));
+  a.download = filename;
+  a.click();
+}
+
+function showError(msg) {
+  const box = document.getElementById('errorBox');
+  document.getElementById('errorText').textContent = msg;
+  box.classList.remove('hidden');
+}
+
+function hideError() {
+  document.getElementById('errorBox').classList.add('hidden');
+}
+
+function showToast(msg) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+function showAnalysis(a) {
+  const panel = document.getElementById('analysisPanel');
+  panel.classList.remove('hidden');
+
+  // LLM badge
+  if (a.llm_used) document.getElementById('llmBadge').classList.remove('hidden');
+
+  // KPI cards
+  const kpis = [
+    { label: 'Sentiment',    value: a.sentiment_score,   cls: a.sentiment_score >= 3.5 ? 'good' : a.sentiment_score >= 2.5 ? 'warn' : 'danger' },
+    { label: 'Compliance %', value: a.compliance_score + '%', cls: a.compliance_score >= 70 ? 'good' : a.compliance_score >= 40 ? 'warn' : 'danger' },
+    { label: 'Stress Markers', value: a.stress_marker,   cls: a.stress_marker <= 2 ? 'good' : a.stress_marker <= 5 ? 'warn' : 'danger' },
+    { label: 'Staff Rows',   value: a.staff_rows_written,  cls: '' },
+    { label: 'Blockers',     value: a.blocker_rows_written, cls: a.blocker_rows_written === 0 ? 'good' : a.blocker_rows_written <= 2 ? 'warn' : 'danger' },
+    { label: 'CSV Written',  value: a.daily_log_written ? '✓' : '✗', cls: a.daily_log_written ? 'good' : 'danger' },
+  ];
+  document.getElementById('kpiGrid').innerHTML = kpis.map(k =>
+    `<div class="kpi-card ${k.cls}">
+       <div class="kpi-value">${k.value}</div>
+       <div class="kpi-label">${k.label}</div>
+     </div>`
+  ).join('');
+
+  // Flag pills
+  const flags = [
+    { label: a.shame_flag      ? '⚠ SHAME DETECTED'    : '✓ No Shame',        cls: a.shame_flag      ? 'alert' : 'ok' },
+    { label: a.escalation_raised ? '🔺 Escalation Raised' : '✓ No Escalation', cls: a.escalation_raised ? 'warn'  : 'ok' },
+    { label: a.llm_used        ? '✦ LLM Enriched'       : '⚙ Rule-Based',      cls: a.llm_used        ? 'ok'    : 'warn' },
+  ];
+  document.getElementById('flagRow').innerHTML = flags.map(f =>
+    `<span class="flag-pill ${f.cls}">${f.label}</span>`
+  ).join('');
+}
+
+loadEngines();
+</script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+Let me read the relevant files to understand the full picture.
+
+Read file(s)
+
+huddle_generater.py
+
+huddles.html
+The files are large. Let me read them in chunks to get the full picture, specifically focusing on Block 2 — Today's Mission.
+
+Searched workspace
+Finding Block 2 Today's Mission in the Python backend
+Finding Block 2 Today's Mission in the HTML files
+Read file(s)
+
+app.py 480 - 651
+
+dashboard.html 790 - 851
+Now I have the full picture. Here's a complete breakdown of how Block 2 — Today's Mission is built and displayed.
+
+How Block 2 — Today's Mission Works
+Data Creation (app.py)
+The logic lives inside the huddle brief generation loop that picks 3 branches: worst, mid, and best by MTD CASA %.
+
+Step 1 — Calculate pct and gap
+
+pct = float(row["mtd_pct"])          # MTD CASA achievement %
+gap = max(0, int(row["total_target"] - row["total_casa"]))  # accounts still needed
+mtd_pct comes from aggregating huddle_daily_log.csv — it's (total CASA opened / total CASA target) * 100 for that branch.
+
+Step 2 — Three-tier conditional logic for mission_desc and tasks
+
+Condition	mission_desc	Tasks assigned
+pct >= 100	"On Track — shift focus to cross-sell and wallet depth"	Cross-sell, FD conversion, NPS push
+pct < 88	f"CASA Sprint — {gap} accounts gap to close"	CASA sprint blitz, RM call blitz, door-to-door
+88 <= pct < 100	f"Focus Mode — close {gap}-account gap before month-end"	CASA focus with mini-targets, mid-day check-in, cross-sell walk-ins
+if pct >= 100:
+    tasks = [
+        "Cross-sell day: every new SA gets a credit card offer at the same sitting",
+        "FD conversion: call SA customers with Rs.50K+ idle balance",
+        "NPS push: one staff calls 3 recent account holders for feedback"
+    ]
+    mission_desc = "On Track — shift focus to cross-sell and wallet depth"
+elif pct < 88:
+    tasks = [
+        f"CASA SPRINT: need {gap} accounts today — every conversation starts with account opening",
+        "RM Call Blitz: each RM calls 5 existing customers for FD top-up or referral",
+        "Door-to-door: visit top 3 nearby employers or societies before 11am"
+    ]
+    mission_desc = f"CASA Sprint — {gap} accounts gap to close"
+else:
+    tasks = [
+        f"CASA Focus: {gap}-account gap — assign each RM a daily mini-target",
+        "Mid-day check-in: BM reviews progress at 1pm and re-deploys if needed",
+        "Cross-sell to walk-ins: offer FD or insurance to non-CASA visitors"
+    ]
+    mission_desc = f"Focus Mode — close {gap}-account gap before month-end"
+Step 3 — segment lookup
+
+The customer segment shown under the mission is derived from BRANCH_TYPE:
+
+SEGMENT_MAP = {
+    "Metro":      "Salaried professionals, corporates, HNI wallet-share",
+    "Urban":      "Self-employed traders, salaried mid-income, digital-first",
+    "Semi-Urban": "Self-employed traders, govt employees, school/college staff",
+    "Rural":      "Farmers, daily-wage workers, SHG members, local merchants",
+}
+All of this gets packed into the briefs_huddle list as mission_desc, segment, and tasks keys and sent to the frontend as JSON.
+
+HTML Rendering (templates/dashboard.html)
+The JS receives the brief object b and builds the block like this:
+
+// Block 2 — Today's Mission
+html += '<div class="hblock">';
+html += '<div class="hblock-title">BLOCK 2 &mdash; TODAY&#39;S MISSION</div>';
+
+// mission_desc — the status line (e.g. "CASA Sprint — 42 accounts gap to close")
+html += '<div style="font-size:12px;color:#6b7a99;margin-bottom:8px">' + b.mission_desc + '</div>';
+
+// segment — customer type for that branch tier
+html += '<div style="font-size:11px;color:#8892a4;margin-bottom:8px">Segment: ' + b.segment + '</div>';
+
+// tasks — ordered list with rotating emoji icons
+html += '<ol style="margin:0;padding-left:18px;font-size:13px">';
+b.tasks.forEach(function(t, i) {
+    var icons = ['&#128680;','&#128222;','&#127970;','&#128204;','&#9733;'];
+    // 🚨 📞 🏪 📌 ★
+    html += '<li style="margin-bottom:6px">' + (icons[i] || '&#9658;') + '&nbsp; ' + t + '</li>';
+});
+html += '</ol></div>';
+The 5 icons map to: 🚨 📞 🏪 📌 ★ — cycling through the task list positionally.
+
+Summary of all expressions/logic used
+pct >= 100 → growth/cross-sell mode
+pct < 88 → sprint/emergency mode with dynamic gap interpolated into task text
+88 <= pct < 100 → focus mode with gap in both mission_desc and first task
+gap = max(0, total_target - total_casa) — floor at 0 so it never goes negative
+SEGMENT_MAP[branch_type] — static lookup, no computation
+Task icons are index-based from a fixed 5-element array, falling back to ▶ if more than 5 tasks exist

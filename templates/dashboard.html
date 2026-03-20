@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YES Bank AI Solutions — PoC Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-tag">AI Solutions PoC</div>
+    <div class="brand-title">YES Bank</div>
+    <div class="brand-sub">Branch Intelligence Suite</div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Overview</div>
+    <div class="nav-item active" onclick="showPage('overview', this)">
+      <div class="nav-icon">🏦</div> Overview
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Solutions</div>
+    <div class="nav-item" onclick="showPage('s1', this)">
+      <div class="nav-icon">📍</div> Location Engine
+    </div>
+    <div class="nav-item" onclick="showPage('s2', this)">
+      <div class="nav-icon">🤖</div> Performance Copilot
+    </div>
+    <div class="nav-item" onclick="showPage('s4', this)">
+      <div class="nav-icon">🚀</div> Ramp-Up Accelerator
+    </div>
+    <div class="nav-item" onclick="showPage('s5', this)">
+      <div class="nav-icon">📋</div> Huddle Engine
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    {# Dynamic sidebar badge — populated from CSV row counts #}
+    <div class="data-badge">
+      <span>{{ branches_counts }}</span> branches<br>
+      <span>{{ summary.districts_scored }}</span> districts scored<br>
+      <span>{{ "{:,}".format(summary.mis_records) }}</span> MIS records<br>
+      <span>{{ summary.playbook_entries }}</span> playbook entries
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div>
+      <div id="topbar-title" class="topbar-title">AI Solutions Overview</div>
+      <div id="topbar-sub" class="topbar-subtitle">Prepared for Amol Vijay Patkar · National Head, Branch Strategy</div>
+    </div>
+    <div class="topbar-right">
+      <div id="data-indicator" class="status-pill">Data: real</div>
+      <div class="status-pill">PoC Live</div>
+      <button class="btn-primary">Export Report</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ══════════════════ OVERVIEW PAGE ══════════════════ -->
+    <div id="page-overview" class="page active">
+      <div class="overview-header">
+        <div class="oh-tag">Strategic AI Initiative · FY 2025–26</div>
+        <div class="oh-title">Branch Intelligence Suite</div>
+        <div class="oh-subtitle">Three AI solutions designed to accelerate YES Bank's branch expansion, sharpen performance management, and reduce new branch ramp-up time — built on external public data and YES Bank MIS data.</div>
+        <div class="oh-stats">
+          <div>
+            <div id="stat-top-pri" class="oh-stat-val">{{ summary.top_priority }}</div>
+            <div class="oh-stat-label">Top Priority Districts</div>
+          </div>
+          <div>
+            <div id="stat-rec" class="oh-stat-val">{{ summary.recommended }}</div>
+            <div class="oh-stat-label">Recommended Locations</div>
+          </div>
+          <div>
+            <div id="stat-risk" class="oh-stat-val">{{ summary.at_risk }}</div>
+            <div class="oh-stat-label">Branches Flagged At-Risk</div>
+          </div>
+          <div>
+            <div id="stat-capex" class="oh-stat-val">₹{{ summary.avg_capex }}L</div>
+            <div class="oh-stat-label">Avg New Branch Capex</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="solution-cards">
+        <div class="sol-card" style="--sol-color:#003087" onclick="showPage('s1', document.querySelectorAll('.nav-item')[1])">
+          <div class="sol-num">SOLUTION 01</div>
+          <div class="sol-title">Branch Location Intelligence Engine</div>
+          <div class="sol-desc">Scores every district in India for new branch viability using RBI BSR data, PMJDY penetration, competitive density, and market size signals.</div>
+          <div class="sol-kpis">
+            <span class="sol-kpi-tag">Branch ROI</span>
+            <span class="sol-kpi-tag">Time-to-Profit</span>
+            <span class="sol-kpi-tag">CASA Catchment</span>
+          </div>
+          <div class="sol-footer">
+            <span>{{ summary.districts_scored }} districts scored</span>
+            <span class="sol-status">▶ Live</span>
+          </div>
+        </div>
+        <div class="sol-card" style="--sol-color:#00a0b0" onclick="showPage('s2', document.querySelectorAll('.nav-item')[2])">
+          <div class="sol-num">SOLUTION 02</div>
+          <div class="sol-title">Branch Performance Copilot</div>
+          <div class="sol-desc">Natural language queries over branch MIS. Ask "which Maharashtra branches are at CASA risk?" and get instant, actionable diagnostics.</div>
+          <div class="sol-kpis">
+            <span class="sol-kpi-tag">CASA Growth</span>
+            <span class="sol-kpi-tag">Cost-to-Income</span>
+            <span class="sol-kpi-tag">Branch Productivity</span>
+          </div>
+          <div class="sol-footer">
+            <span>{{ s2_kpis.branches_tracked }} branches · 12 months</span>
+            <span class="sol-status">▶ Live</span>
+          </div>
+        </div>
+        <div class="sol-card" style="--sol-color:#c9a84c" onclick="showPage('s4', document.querySelectorAll('.nav-item')[3])">
+          <div class="sol-num">SOLUTION 04</div>
+          <div class="sol-title">New Branch Ramp-Up Accelerator</div>
+          <div class="sol-desc">Day-1 intelligence brief for every new branch manager: market context, CASA ramp-up targets, 90-day playbook, and RBI compliance checklist.</div>
+          <div class="sol-kpis">
+            <span class="sol-kpi-tag">Months-to-Profit</span>
+            <span class="sol-kpi-tag">CASA Ramp Rate</span>
+            <span class="sol-kpi-tag">Compliance Risk</span>
+          </div>
+          <div class="sol-footer">
+            <span>{{ s4_kpis.archetypes }} archetypes · {{ summary.playbook_entries }} branches</span>
+            <span class="sol-status">▶ Live</span>
+          </div>
+        </div>
+        <div class="sol-card" style="--sol-color:#7c3aed" onclick="showPage('s5', document.querySelectorAll('.nav-item')[4])">
+          <div class="sol-num">SOLUTION 05</div>
+          <div class="sol-title">AI Huddle Engine</div>
+          <div class="sol-desc">Auto-generates 5-block daily huddle briefs for every branch. Compliance monitoring, shame-culture detection, and roll-up reporting from Branch to National level.</div>
+          <div class="sol-kpis">
+            <span class="sol-kpi-tag">Daily Huddle</span>
+            <span class="sol-kpi-tag">Compliance</span>
+            <span class="sol-kpi-tag">Roll-Up Reports</span>
+          </div>
+          <div class="sol-footer">
+            <span>{{ huddle.total_branches }} branches · {{ huddle.working_days }} working days</span>
+            <span class="sol-status">&#9658; Live</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data overview -->
+      <div class="card-grid-2">
+        <div class="card">
+          <div class="card-title">📊 YES Bank Network Snapshot</div>
+          <div class="kpi-strip" style="grid-template-columns: repeat(2,1fr)">
+            <div class="kpi-card" style="--kpi-color: #003087">
+              <div class="kpi-label">Total Branches</div>
+              <div class="kpi-value">{{ branches_counts }}</div>
+              <div class="kpi-delta up">↑ 10% expansion target</div>
+            </div>
+            <div class="kpi-card" style="--kpi-color: #00a0b0">
+              <div class="kpi-label">States Covered</div>
+              <div class="kpi-value">{{ summary.states_covered }}</div>
+              <div class="kpi-delta up">Metro to Rural</div>
+            </div>
+            <div class="kpi-card" style="--kpi-color: #c9a84c">
+              <div class="kpi-label">Avg CASA / Branch</div>
+              <div class="kpi-value">{{ "{:,}".format(summary.avg_casa_branch) }}</div>
+              <div class="kpi-delta up">Estimated per branch</div>
+            </div>
+            <div class="kpi-card" style="--kpi-color: #d93025">
+              <div class="kpi-label">Cost-to-Income</div>
+              <div class="kpi-value">{{ summary.cost_to_income }}%</div>
+              <div class="kpi-delta down">↓ Reduction target: 65%</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">🗺️ Branch Type Distribution</div>
+          <div style="margin-top:8px">
+            <div style="display:flex;flex-direction:column;gap:10px">
+              {% for bt in summary.type_dist %}
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+                  <span>{{ bt.type }}</span>
+                  <span style="font-family:'DM Mono',monospace;font-weight:600">{{ bt.count }} branches ({{ bt.pct }}%)</span>
+                </div>
+                <div class="score-bar">
+                  <div class="score-fill" style="width:{{ bt.pct }}%;background:{{ bt.color }}"></div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════ SOLUTION 1 PAGE ══════════════════ -->
+    <div id="page-s1" class="page">
+      <div class="kpi-strip">
+        <div class="kpi-card" style="--kpi-color:#003087">
+          <div class="kpi-label">Districts Scored</div>
+          <div class="kpi-value">{{ s1_kpis.districts_scored }}</div>
+          <div class="kpi-delta up">Across {{ s1_kpis.num_states }} states</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#d93025">
+          <div class="kpi-label">Top Priority</div>
+          <div class="kpi-value">{{ s1_kpis.top_priority }}</div>
+          <div class="kpi-delta up">Score &gt; 70/100</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#c9a84c">
+          <div class="kpi-label">Recommended</div>
+          <div class="kpi-value">{{ s1_kpis.recommended }}</div>
+          <div class="kpi-delta up">Score 55–70</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#1a7f5a">
+          <div class="kpi-label">Avg Predicted M2P</div>
+          <div class="kpi-value">{{ s1_kpis.avg_m2p }}mo</div>
+          <div class="kpi-delta up">Across top picks</div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <div class="section-title">Top 9 Branch Opening Opportunities</div>
+        <div class="section-meta">Ranked by composite viability score</div>
+      </div>
+
+      {# JS renders this div from the opp JSON injected below #}
+      <div class="opp-grid" id="opp-grid"></div>
+
+      <div class="card">
+        <div class="card-title">📊 Opportunity Tier Breakdown</div>
+        <table class="data-table">
+          <thead><tr><th>Tier</th><th>Districts</th><th>Avg Viability</th><th>Avg Months to Profit</th><th>Action</th></tr></thead>
+          <tbody>
+            {% for tier in s1_kpis.tier_breakdown %}
+            <tr>
+              <td><span class="badge {{ tier.badge }}">{{ tier.tier }}</span></td>
+              <td>{{ tier.count }}</td>
+              <td>{{ tier.avg_v }}</td>
+              <td>{{ tier.avg_m2p }}</td>
+              <td><span style="color:#003087;font-size:11px;font-weight:600;cursor:pointer">{{ tier.action }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">⚙️ Model Feature Weights — What Drives Viability Score</div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:6px">
+          {% for fw in feature_weights %}
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+              <span>{{ fw.label }}</span>
+              <span style="font-family:'DM Mono',monospace;font-weight:600">{{ fw.pct }}%</span>
+            </div>
+            <div class="score-bar" style="height:8px">
+              <div class="score-fill" style="width:{{ fw.pct }}%;background:{{ fw.color }};height:8px"></div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════ SOLUTION 2 PAGE ══════════════════ -->
+    <div id="page-s2" class="page">
+      <div class="kpi-strip">
+        <div class="kpi-card" style="--kpi-color:#00a0b0">
+          <div class="kpi-label">Branches Tracked</div>
+          <div class="kpi-value">{{ s2_kpis.branches_tracked }}</div>
+          <div class="kpi-delta up">{{ s2_kpis.states }} states · 12 months</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#d93025">
+          <div class="kpi-label">At-Risk Branches</div>
+          <div class="kpi-value">{{ s2_kpis.at_risk }}</div>
+          <div class="kpi-delta down">CASA achievement &lt;80%</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#c9a84c">
+          <div class="kpi-label">Best Cluster Q4</div>
+          <div class="kpi-value">{{ s2_kpis.best_casa }}%</div>
+          <div class="kpi-delta up">{{ s2_kpis.best_cluster }} · {{ s2_kpis.best_n }} branches</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#003087">
+          <div class="kpi-label">Worst Cluster Q4</div>
+          <div class="kpi-value">{{ s2_kpis.worst_casa }}%</div>
+          <div class="kpi-delta down">{{ s2_kpis.worst_cluster }} · action needed</div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <div class="section-title">Branch Performance Copilot — Sample Queries</div>
+        <div class="section-meta">Click any query to see the AI-generated response</div>
+      </div>
+
+      <div class="copilot-container">
+        <div class="query-list">
+          <div class="query-list-header">Sample Queries</div>
+          {% for q in queries %}
+          <div class="query-item {% if loop.first %}active{% endif %}" onclick="showQuery({{ loop.index0 }}, this)">
+            {{ q.q }}
+          </div>
+          {% endfor %}
+        </div>
+        <div class="copilot-response" id="copilot-response">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:20px">
+        <div class="card-title">📊 Cluster Performance — Q4 FY25</div>
+        <table class="data-table" id="cluster-table">
+          <thead><tr><th>Cluster</th><th>Branches</th><th>CASA Achievement</th><th>Total CASA Opened</th><th>Deposits (Cr)</th><th>CASA Ratio</th><th>NPS</th></tr></thead>
+          <tbody id="cluster-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══════════════════ SOLUTION 4 PAGE ══════════════════ -->
+    <div id="page-s4" class="page">
+      <div class="kpi-strip">
+        <div class="kpi-card" style="--kpi-color:#c9a84c">
+          <div class="kpi-label">Branch Archetypes</div>
+          <div class="kpi-value">{{ s4_kpis.archetypes }}</div>
+          <div class="kpi-delta up">Metro to Rural</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#003087">
+          <div class="kpi-label">Playbook Entries</div>
+          <div class="kpi-value">{{ s4_kpis.playbook_entries }}</div>
+          <div class="kpi-delta up">Historical branches</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#1a7f5a">
+          <div class="kpi-label">Best Breakeven</div>
+          <div class="kpi-value">{{ s4_kpis.best_m2p }}mo</div>
+          <div class="kpi-delta up">{{ s4_kpis.best_archetype }}</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#d93025">
+          <div class="kpi-label">{{ s4_kpis.worst_archetype }} Breakeven</div>
+          <div class="kpi-value">{{ s4_kpis.worst_m2p }}mo</div>
+          <div class="kpi-delta down">Monitor closely</div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <div class="section-title">Branch Intelligence Brief</div>
+        <div class="section-meta">Select a new branch to generate Day-1 brief</div>
+      </div>
+
+      {# Dynamic brief selector buttons from top branch opportunities #}
+      <div class="brief-selector">
+        {% for b in briefs %}
+        <button class="brief-btn {% if loop.first %}active{% endif %}" onclick="showBrief({{ loop.index0 }}, this)">
+          {{ b.location }}
+        </button>
+        {% endfor %}
+      </div>
+
+      <div class="brief-grid" id="brief-container">
+        <!-- Populated by JS -->
+      </div>
+
+      <div class="card" style="margin-top:20px">
+        <div class="card-title">📊 Archetype Benchmark Comparison</div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Archetype</th>
+              <th>Avg Months to Profit</th>
+              <th>Peak Monthly CASA</th>
+              <th>Month-12 CASA %</th>
+              <th>Success Rate</th>
+              <th>Avg Capex</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for arch in s4_kpis.arch_table %}
+            <tr>
+              <td><b>{{ arch.name }}</b></td>
+              <td>{{ arch.avg_m2p }} months</td>
+              <td>{{ arch.peak }}/mo</td>
+              <td>{{ arch.m12pct }}%</td>
+              <td><span class="badge {{ arch.badge }}">{{ arch.success_rt }}%</span></td>
+              <td>₹{{ arch.capex }}L</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+
+    <!-- ══════════════════ SOLUTION 5 PAGE ══════════════════ -->
+    <div id="page-s5" class="page">
+
+      <!-- KPI STRIP -->
+      <div class="kpi-strip">
+        <div class="kpi-card" style="--kpi-color:#7c3aed">
+          <div class="kpi-label">Huddle Occurrence</div>
+          <div class="kpi-value">{{ huddle.occurrence_rate }}%</div>
+          <div class="kpi-delta up">Network-wide &middot; {{ huddle.working_days }} days</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#003087">
+          <div class="kpi-label">Avg Compliance Score</div>
+          <div class="kpi-value">{{ huddle.avg_compliance }}</div>
+          <div class="kpi-delta up">Out of 100 &middot; from COMPLIANCE_SCORE</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#1a7f5a">
+          <div class="kpi-label">CASA Uplift (Huddle Days)</div>
+          <div class="kpi-value">+{{ huddle.uplift_pct }}%</div>
+          <div class="kpi-delta up">vs missed huddle days</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#c9a84c">
+          <div class="kpi-label">Extra CASA Accounts</div>
+          <div class="kpi-value">{{ huddle.extra_casa }}</div>
+          <div class="kpi-delta up">ROI of huddle programme</div>
+        </div>
+      </div>
+
+      <!-- TABS -->
+      <div style="display:flex;gap:4px;margin-bottom:20px">
+        <button class="s5-tab active" id="tab-brief"  onclick="showS5Tab('brief')">&#128203; Daily Huddle Brief</button>
+        <button class="s5-tab"        id="tab-comply" onclick="showS5Tab('comply')">&#9989; Compliance Monitoring</button>
+        <button class="s5-tab"        id="tab-rollup" onclick="showS5Tab('rollup')">&#128202; Roll-Up Reports</button>
+      </div>
+
+      <!-- ── TAB: DAILY HUDDLE BRIEF ── -->
+      <div id="s5-brief" class="s5-tab-content">
+        <div class="section-header">
+          <div class="section-title">AI-Generated Daily Huddle Brief</div>
+          <div class="section-meta">Select a branch to view its 5-block morning brief &middot; Generated at 7:45am daily</div>
+        </div>
+        <div class="brief-selector" id="huddle-selector" style="margin-bottom:20px"></div>
+        <div id="huddle-brief-container"></div>
+        <div class="card" style="margin-top:20px;background:linear-gradient(135deg,#f8f6ff,#eef2ff)">
+          <div class="card-title" style="color:#7c3aed">&#128304; Production Integration Note</div>
+          <div style="font-size:13px;color:#444;line-height:1.8">
+            <b>Data source:</b> Finacle CBS &rarr; daily MIS extract at 6pm<br>
+            <b>Brief generation:</b> Scheduled Python job at 7:45am &rarr; WhatsApp Business API delivery<br>
+            <b>Full audio recording:</b> Branch Manager submits audio post-huddle &rarr; local Whisper STT &rarr; NLP pipeline (on-premise, RBI-compliant)<br>
+            <b>No external connectivity required.</b> All processing within YES Bank&apos;s intranet boundary.
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TAB: COMPLIANCE MONITORING ── -->
+      <div id="s5-comply" class="s5-tab-content" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+          <div class="card">
+            <div class="card-title">Compliance Tier Distribution</div>
+            <div style="font-size:12px;color:#8892a4;margin-bottom:16px">{{ huddle.total_records }} huddle records scored across {{ huddle.total_branches }} branches &times; {{ huddle.working_days }} days</div>
+            <div id="compliance-tier-bars"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Audio Analysis &mdash; What AI Extracts</div>
+            <div style="font-size:13px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+                <div style="background:#f0f4ff;border-radius:8px;padding:12px;text-align:center">
+                  <div style="font-size:22px;font-weight:700;color:#003087">{{ huddle.occurrence_rate }}%</div>
+                  <div style="font-size:11px;color:#8892a4">Occurrence Rate</div>
+                </div>
+                <div style="background:#f0f4ff;border-radius:8px;padding:12px;text-align:center">
+                  <div style="font-size:22px;font-weight:700;color:#7c3aed">{{ huddle.shame_flag_rate }}%</div>
+                  <div style="font-size:11px;color:#8892a4">Shame-Flag Rate</div>
+                </div>
+              </div>
+              <div style="font-size:12px;color:#444;line-height:1.8">
+                &#127897;&#65039; <b>Full meeting audio</b> &rarr; submitted post-huddle<br>
+                &#9201;&#65039; Duration verification (10&ndash;20 min target)<br>
+                &#128101; Speaker count (is team participating?)<br>
+                &#128516; Sentiment score 1&ndash;5 (is it healthy?)<br>
+                &#128483;&#65039; Manager talk % (monologue detection)<br>
+                &#128549; Stress markers (shame-culture detection)<br>
+                &#128221; Keyword presence (agenda followed?)<br>
+                <br>
+                <span style="color:#d93025;font-size:11px">&#9888;&#65039; Raw audio discarded within 24 hours. Only AI-extracted signals retained. RBI data privacy compliant.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:20px;border-left:4px solid #7c3aed">
+          <div class="card-title">Shame-Culture Detection System</div>
+          <div style="font-size:13px;color:#444;line-height:1.9">
+            The system monitors for 5 shame signals in rolling 7-day windows. When &ge;2 signals persist for 3+ consecutive days, a <b>private, supportive</b> alert is sent to the Regional Manager.
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px">
+              <div style="background:#fdf4ff;border-radius:8px;padding:10px;text-align:center;font-size:11px;border:1px solid #e9d5ff"><b>Low Sentiment</b><br>&lt; 2.2/5.0</div>
+              <div style="background:#fdf4ff;border-radius:8px;padding:10px;text-align:center;font-size:11px;border:1px solid #e9d5ff"><b>Manager Monologue</b><br>&gt; 75% talk time</div>
+              <div style="background:#fdf4ff;border-radius:8px;padding:10px;text-align:center;font-size:11px;border:1px solid #e9d5ff"><b>High Stress</b><br>&gt; 4.0/5.0 markers</div>
+              <div style="background:#fdf4ff;border-radius:8px;padding:10px;text-align:center;font-size:11px;border:1px solid #e9d5ff"><b>Silent Team</b><br>&le; 1 speaker</div>
+              <div style="background:#fdf4ff;border-radius:8px;padding:10px;text-align:center;font-size:11px;border:1px solid #e9d5ff"><b>Complaint Spike</b><br>Post-huddle day</div>
+            </div>
+            <div style="margin-top:12px;padding:10px;background:#f0f9ff;border-radius:8px;font-size:12px">
+              <b>Intervention is supportive, not punitive:</b> RM receives private coaching prompt. Branch Manager receives a &ldquo;Tip of the Day&rdquo; in next brief. No names surfaced publicly.
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">&#128202; Does the Huddle Actually Drive CASA? &mdash; Outcome Correlation</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-top:16px">
+            <div style="text-align:center;padding:20px;background:#f0fdf4;border-radius:10px">
+              <div style="font-size:32px;font-weight:800;color:#1a7f5a">{{ huddle.huddle_casa_day }}</div>
+              <div style="font-size:13px;color:#6b7a99;margin-top:4px">CASA accounts/branch/day</div>
+              <div style="font-size:12px;color:#1a7f5a;font-weight:600">On huddle days</div>
+            </div>
+            <div style="text-align:center;padding:20px;background:#fff8f0;border-radius:10px">
+              <div style="font-size:32px;font-weight:800;color:#d93025">{{ huddle.miss_casa_day }}</div>
+              <div style="font-size:13px;color:#6b7a99;margin-top:4px">CASA accounts/branch/day</div>
+              <div style="font-size:12px;color:#d93025;font-weight:600">On missed huddle days</div>
+            </div>
+            <div style="text-align:center;padding:20px;background:#eef2ff;border-radius:10px">
+              <div style="font-size:32px;font-weight:800;color:#7c3aed">+{{ huddle.uplift_pct }}%</div>
+              <div style="font-size:13px;color:#6b7a99;margin-top:4px">CASA uplift</div>
+              <div style="font-size:12px;color:#7c3aed;font-weight:600">= {{ huddle.extra_casa }} extra accounts</div>
+            </div>
+          </div>
+          <div style="margin-top:16px;padding:12px;background:#f8f9fa;border-radius:8px;font-size:13px;color:#444">
+            &#128202; <b>Methodology:</b> Based on {{ huddle.uplift_pct }}% CASA uplift on huddle days across {{ huddle.total_branches }} branches &times; {{ huddle.working_days }} working days.
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TAB: ROLL-UP REPORTS ── -->
+      <div id="s5-rollup" class="s5-tab-content" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+          <div class="card" style="border-left:4px solid #d93025">
+            <div class="card-title">&#128680; Escalations Requiring Action</div>
+            <div style="font-size:36px;font-weight:800;color:#d93025;margin:10px 0">{{ huddle.escalations }}</div>
+            <div style="font-size:13px;color:#6b7a99;margin-bottom:12px">branches flagged for RM intervention</div>
+            <div style="font-size:12px;color:#444;line-height:1.8">
+              <b>Triggers:</b><br>
+              &bull; &ge;3 consecutive missed huddles &rarr; RM call<br>
+              &bull; &ge;5 days score &lt; 50 &rarr; coaching visit<br>
+              &bull; Overall occurrence rate &lt; 60% &rarr; review<br>
+              &bull; Shame culture HIGH risk &rarr; 48hr response
+            </div>
+          </div>
+          <div class="card" style="border-left:4px solid #1a7f5a">
+            <div class="card-title">&#127942; Top 5 Branches &mdash; Huddle Quality</div>
+            <table class="data-table" style="margin-top:8px">
+              <thead><tr><th>Branch</th><th>Cluster</th><th>Score</th><th>Occurrence</th></tr></thead>
+              <tbody id="top5-huddle-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-title">Cluster Compliance League Table</div>
+          <div style="font-size:12px;color:#8892a4;margin-bottom:12px">Daily roll-up available at cluster level by 10:00am &middot; Cluster Heads receive WhatsApp digest</div>
+          <table class="data-table">
+            <thead><tr><th>Cluster</th><th>Branches</th><th>Avg Score</th><th>Occurrence</th><th>Shame Flags</th><th>Escalations</th></tr></thead>
+            <tbody id="cluster-league-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-title">&#128225; Roll-Up Delivery Architecture</div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:16px;text-align:center">
+            <div style="background:#f0f4ff;border-radius:10px;padding:14px"><div style="font-size:24px">&#127974;</div><div style="font-weight:700;font-size:13px;margin-top:6px">Branch</div><div style="font-size:11px;color:#8892a4;margin-top:4px">Daily score card &middot; Real-time</div><div style="font-size:11px;color:#003087;margin-top:6px">Delivery: WhatsApp</div></div>
+            <div style="background:#f0f4ff;border-radius:10px;padding:14px"><div style="font-size:24px">&#128101;</div><div style="font-weight:700;font-size:13px;margin-top:6px">Cluster Head</div><div style="font-size:11px;color:#8892a4;margin-top:4px">Daily roll-up by 10am</div><div style="font-size:11px;color:#003087;margin-top:6px">Delivery: WhatsApp + Email</div></div>
+            <div style="background:#f0f4ff;border-radius:10px;padding:14px"><div style="font-size:24px">&#128506;&#65039;</div><div style="font-weight:700;font-size:13px;margin-top:6px">Regional Head</div><div style="font-size:11px;color:#8892a4;margin-top:4px">Daily + weekly digest</div><div style="font-size:11px;color:#003087;margin-top:6px">Delivery: Dashboard + Email</div></div>
+            <div style="background:#f0f4ff;border-radius:10px;padding:14px"><div style="font-size:24px">&#127961;&#65039;</div><div style="font-weight:700;font-size:13px;margin-top:6px">Zonal Head</div><div style="font-size:11px;color:#8892a4;margin-top:4px">Weekly summary &middot; Monday</div><div style="font-size:11px;color:#003087;margin-top:6px">Delivery: Email report</div></div>
+            <div style="background:#003087;border-radius:10px;padding:14px;color:white"><div style="font-size:24px">&#127919;</div><div style="font-weight:700;font-size:13px;margin-top:6px">National (Amol)</div><div style="font-size:11px;color:#b0c4de;margin-top:4px">Monthly dashboard + ROI</div><div style="font-size:11px;color:#c9a84c;margin-top:6px">Delivery: This dashboard</div></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-s5 -->
+
+  </div><!-- /content -->
+</main>
+
+{# ─── INJECTED DATA ─── All dynamic data from Flask/CSV is injected here as JS variables #}
+<script>
+// ─── DYNAMIC DATA (generated by Flask from CSV files) ────────────────────────
+const opportunities    = {{ opp_json | safe }};
+const clusterData      = {{ cluster_json | safe }};
+const briefs           = {{ briefs_json | safe }};
+const dashboardSummary = {{ summary_json | safe }};
+const queries          = {{ queries_json | safe }};
+const complianceData   = {{ compliance_json | safe }};
+const huddleData       = {{ huddle_json | safe }};
+</script>
+
+<script>
+// ─── NAVIGATION ───────────────────────────────────────────────────────────────
+function showPage(pageId, navEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + pageId).classList.add('active');
+  if (navEl) navEl.classList.add('active');
+  const titles = {
+    overview: 'AI Solutions Overview',
+    s1: 'Solution 1 — Location Intelligence Engine',
+    s2: 'Solution 2 — Branch Performance Copilot',
+    s4: 'Solution 4 — Ramp-Up Accelerator',
+    s5: 'Solution 5 — AI Branch Huddle Engine'
+  };
+  document.getElementById('topbar-title').textContent = titles[pageId] || '';
+}
+
+// ─── COPILOT QUERY SWITCHER ───────────────────────────────────────────────────
+function showQuery(idx, el) {
+  document.querySelectorAll('.query-item').forEach(q => q.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('copilot-response').innerHTML = queries[idx].response;
+}
+
+// ─── BRIEF SWITCHER ───────────────────────────────────────────────────────────
+function showBrief(idx, el) {
+  document.querySelectorAll('.brief-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderBrief(idx);
+}
+
+// ─── TIER BADGE HELPER ────────────────────────────────────────────────────────
+function tierBadge(tier) {
+  const map = {
+    'Top Priority': 'badge-red',
+    'Recommended':  'badge-amber',
+    'Watch List':   'badge-blue',
+    'Low Priority': 'badge-gray'
+  };
+  return `<span class="badge ${map[tier] || 'badge-gray'}">${tier}</span>`;
+}
+
+// ─── RENDER OPPORTUNITY GRID (Solution 1) ────────────────────────────────────
+function renderOpportunities() {
+  const grid = document.getElementById('opp-grid');
+  grid.innerHTML = opportunities.slice(0, 9).map(o => `
+    <div class="opp-card">
+      <div class="opp-rank">#${o.rank} · ${tierBadge(o.tier)}</div>
+      <div class="opp-location">${o.district}</div>
+      <div class="opp-state">${o.state}</div>
+      <div class="opp-score-row">
+        <div class="opp-score-label">Viability Score</div>
+        <div class="opp-score-val">${o.score}</div>
+      </div>
+      <div class="score-bar">
+        <div class="score-fill" style="width:${o.score}%;background:linear-gradient(90deg,#003087,#00a0b0)"></div>
+      </div>
+      <div class="opp-metrics">
+        <div><div class="opp-metric-label">Months to Profit</div><div class="opp-metric-val">${o.m2p}mo</div></div>
+        <div><div class="opp-metric-label">Year-1 CASA</div><div class="opp-metric-val">${o.casa12m.toLocaleString()}</div></div>
+        <div><div class="opp-metric-label">YES Bank Gap</div><div class="opp-metric-val">${o.gap}%</div></div>
+        <div><div class="opp-metric-label">Existing Branches</div><div class="opp-metric-val">${o.ybPresence}</div></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── RENDER CLUSTER TABLE (Solution 2) ───────────────────────────────────────
+function renderClusters() {
+  const tbody = document.getElementById('cluster-tbody');
+  tbody.innerHTML = clusterData.map(c => `
+    <tr>
+      <td><b>${c.cluster}</b></td>
+      <td>${c.branches}</td>
+      <td>
+        <span style="font-weight:700;color:${c.casa >= 92 ? '#1a7f5a' : c.casa >= 87 ? '#e67e22' : '#d93025'}">${c.casa}%</span>
+        <div class="score-bar" style="margin-top:3px;width:80px">
+          <div class="score-fill" style="width:${c.casa}%;background:${c.casa >= 92 ? '#1a7f5a' : c.casa >= 87 ? '#e67e22' : '#d93025'}"></div>
+        </div>
+      </td>
+      <td>${c.totalCasa.toLocaleString()}</td>
+      <td>₹${c.deposits}</td>
+      <td>${c.casaRatio}%</td>
+      <td>${c.nps}</td>
+    </tr>
+  `).join('');
+}
+
+// ─── RENDER BRANCH BRIEF (Solution 4) ────────────────────────────────────────
+// ─── COMPLIANCE HTML BUILDER ─────────────────────────────────────────────────
+function buildComplianceHTML() {
+  return complianceData.map(function(c) {
+    var dot   = (c.risk_level || '').toLowerCase();
+    var topic = c.topic.replace(/_/g, ' ');
+    var note  = (c.notes && c.notes !== 'nan') ? ' <span style="color:#6b7a99;font-size:11px">(' + c.notes + ')</span>' : '';
+    var date  = c.effective_date ? ' &middot; Effective ' + c.effective_date : '';
+    return '<div class="compliance-item">' +
+             '<div class="compliance-dot ' + dot + '"></div>' +
+             '<div><b>' + c.category + ' &mdash; ' + topic + ':</b> ' +
+             'Limit: <b>' + c.key_limit + '</b>' + date + note + '</div>' +
+           '</div>';
+  }).join('');
+}
+
+// ─── LAUNCH SEQUENCE HTML BUILDER ────────────────────────────────────────────
+function buildLaunchHTML(launchSequence) {
+  return (launchSequence || []).map(function(phase) {
+    return '<div style="background:' + phase.bg + ';border-radius:8px;padding:10px">' +
+             '<b style="color:' + phase.color + '">' + phase.period + '</b><br>' +
+             phase.items.join('<br>') +
+           '</div>';
+  }).join('');
+}
+
+// ─── RENDER BRANCH BRIEF (Solution 4) ────────────────────────────────────────
+function renderBrief(idx) {
+  var b = briefs[idx];
+  var html = '';
+
+  // Sidebar metrics
+  html += '<div class="brief-sidebar">';
+  html += '<div class="brief-metric"><div class="brief-metric-label">Viability Score</div><div class="brief-metric-value">' + b.score + '<span style="font-size:14px;color:#6b7a99">/100</span></div><div class="brief-metric-sub">' + tierBadge(b.tier) + '</div></div>';
+  html += '<div class="brief-metric"><div class="brief-metric-label">Months to Profit</div><div class="brief-metric-value">' + b.m2p + '<span style="font-size:14px;color:#6b7a99"> months</span></div><div class="brief-metric-sub">Based on ' + b.historicalBranches + ' similar branches</div></div>';
+  html += '<div class="brief-metric"><div class="brief-metric-label">Year-1 CASA Target</div><div class="brief-metric-value">' + b.casa12m.toLocaleString() + '</div><div class="brief-metric-sub">projected accounts</div></div>';
+  html += '<div class="brief-metric"><div class="brief-metric-label">Peak Monthly CASA</div><div class="brief-metric-value">' + b.peakCasa + '</div><div class="brief-metric-sub">at full run-rate</div></div>';
+  html += '<div class="brief-metric"><div class="brief-metric-label">YES Bank Gap</div><div class="brief-metric-value">' + b.gap + '%</div><div class="brief-metric-sub">Whitespace in market</div></div>';
+  html += '<div class="brief-metric"><div class="brief-metric-label">Est. Capex</div><div class="brief-metric-value">&#8377;' + b.capex + 'L</div><div class="brief-metric-sub">Per Capita Income: &#8377;' + b.pcIncome.toLocaleString() + '</div></div>';
+  html += '</div>';
+
+  // Main content
+  html += '<div class="brief-main">';
+
+  // CASA Ramp-Up
+  html += '<div class="brief-section">';
+  html += '<div class="brief-section-title">&#128202; CASA Ramp-Up Trajectory</div>';
+  html += '<div class="rampup-row"><div class="rampup-label">Month 3</div><div class="rampup-bar"><div class="rampup-fill" style="width:' + b.m3pct + '%"></div></div><div class="rampup-val">' + b.m3 + '/mo (' + b.m3pct + '%)</div></div>';
+  html += '<div class="rampup-row"><div class="rampup-label">Month 6</div><div class="rampup-bar"><div class="rampup-fill" style="width:' + b.m6pct + '%"></div></div><div class="rampup-val">' + b.m6 + '/mo (' + b.m6pct + '%)</div></div>';
+  html += '<div class="rampup-row"><div class="rampup-label">Month 12</div><div class="rampup-bar"><div class="rampup-fill" style="width:' + b.m12pct + '%"></div></div><div class="rampup-val">' + b.m12 + '/mo (' + b.m12pct + '%)</div></div>';
+  html += '<div class="rampup-row"><div class="rampup-label">Peak</div><div class="rampup-bar"><div class="rampup-fill" style="width:100%"></div></div><div class="rampup-val">' + b.peakCasa + '/mo (100%)</div></div>';
+  html += '</div>';
+
+  // 90-Day Playbook
+  html += '<div class="brief-section">';
+  html += '<div class="brief-section-title">&#127919; 90-DAY ACTIVATION PLAYBOOK</div>';
+  html += b.successFactors.map(function(s, i) {
+    return '<div class="playbook-item"><div class="playbook-num">' + (i + 1) + '</div><div>' + s + '</div></div>';
+  }).join('');
+  html += '<div style="margin-top:10px">' + b.challenges.map(function(c) {
+    return '<div style="font-size:12px;color:#b36400;padding:4px 0">&#9888; Watch out: ' + c + '</div>';
+  }).join('') + '</div>';
+  html += '</div>';
+
+  // RBI Compliance — dynamic from CSV
+  html += '<div class="brief-section">';
+  html += '<div class="brief-section-title">&#9878;&#65039; RBI COMPLIANCE &mdash; FIRST 30 DAYS</div>';
+  html += buildComplianceHTML();
+  html += '</div>';
+
+  // Product Launch Sequence — dynamic per archetype
+  html += '<div class="brief-section">';
+  html += '<div class="brief-section-title">&#128241; PRODUCT LAUNCH SEQUENCE <span style="font-size:10px;font-weight:400;color:#6b7a99;margin-left:6px">' + b.archetype + '</span></div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">';
+  html += buildLaunchHTML(b.launchSequence);
+  html += '</div>';
+  html += '</div>';
+
+  html += '</div>'; // /brief-main
+
+  document.getElementById('brief-container').innerHTML = html;
+}
+
+
+// ─── HUDDLE TAB SWITCHER ──────────────────────────────────────────────────────
+function showS5Tab(tab) {
+  ['brief','comply','rollup'].forEach(function(t) {
+    var el = document.getElementById('s5-' + t);
+    if (el) el.style.display = (t === tab) ? 'block' : 'none';
+    var btn = document.getElementById('tab-' + t);
+    if (btn) btn.classList.toggle('active', t === tab);
+  });
+}
+
+// ─── HUDDLE BRIEF RENDERER ────────────────────────────────────────────────────
+function renderHuddleBrief(idx) {
+  var b = huddleData.briefs[idx];
+  var yestColor = b.casa_pct >= 100 ? '#22c55e' : (b.casa_pct < 88 ? b.rag_color : '#f59e0b');
+  var html = '';
+  html += '<div class="huddle-card">';
+
+  // Header
+  html += '<div class="huddle-header" style="border-left:4px solid ' + b.rag_color + '">';
+  html += '<div class="huddle-branch-name">' + b.branch_name + '</div>';
+  html += '<div style="font-size:12px;color:#8892a4">' + b.branch_type + ' &middot; ' + b.state + ' &middot; ' + b.cluster + '</div>';
+  html += '<div style="margin-top:6px">';
+  html += '<span class="rag-badge" style="background:' + b.rag_color + '">' + b.rag_icon + ' ' + b.rag + '</span>';
+  html += '<span class="mode-badge" style="background:' + b.mode_color + '">' + b.mode + '</span>';
+  html += '</div></div>';
+
+  // Blocks grid
+  html += '<div class="huddle-blocks">';
+
+  // Block 1 — Scoreboard
+  html += '<div class="hblock">';
+  html += '<div class="hblock-title">BLOCK 1 &mdash; SCOREBOARD</div>';
+  html += '<div class="hblock-row"><span class="hbl">Yesterday CASA</span><span class="hbv" style="color:' + yestColor + '">' + b.yest_opened + ' / ' + b.yest_target + ' (' + b.yest_pct + '%)</span></div>';
+  html += '<div class="hblock-row"><span class="hbl">MTD Achievement</span><span class="hbv">' + b.casa_pct + '%</span></div>';
+  html += '<div class="hblock-row"><span class="hbl">Monthly Gap</span><span class="hbv">' + b.gap + ' accounts</span></div>';
+  html += '<div class="hblock-row"><span class="hbl">Trend</span><span class="hbv">' + b.trend + '</span></div>';
+  html += '<div class="hblock-row"><span class="hbl">Deposits &middot; NPS</span><span class="hbv">' + b.deposit_pct + '% &middot; ' + b.nps + '</span></div>';
+  html += '</div>';
+
+  // Block 2 — Today's Mission
+  html += '<div class="hblock">';
+  html += '<div class="hblock-title">BLOCK 2 &mdash; TODAY&#39;S MISSION</div>';
+  html += '<div style="font-size:12px;color:#6b7a99;margin-bottom:8px">' + b.mission_desc + '</div>';
+  html += '<div style="font-size:11px;color:#8892a4;margin-bottom:8px">Segment: ' + b.segment + '</div>';
+  html += '<ol style="margin:0;padding-left:18px;font-size:13px">';
+  b.tasks.forEach(function(t, i) {
+    var icons = ['&#128680;','&#128222;','&#127970;','&#128204;','&#9733;'];
+    html += '<li style="margin-bottom:6px">' + (icons[i] || '&#9658;') + '&nbsp; ' + t + '</li>';
+  });
+  html += '</ol></div>';
+
+  // Block 3 — Star of Yesterday
+  html += '<div class="hblock">';
+  html += '<div class="hblock-title">BLOCK 3 &mdash; STAR OF YESTERDAY &#11088;</div>';
+  html += '<div style="font-size:18px;font-weight:700;color:#003087;margin:8px 0">' + b.star_name + '</div>';
+  html += '<div style="font-size:12px;color:#6b7a99">' + b.star_role + '</div>';
+  html += '<div style="font-size:13px;margin-top:8px"><b>CASA Accounts Opened</b> &rarr; <span style="color:#003087;font-weight:700">' + b.star_casa + '</span></div>';
+  html += '<div style="font-size:11px;color:#1a7f5a;margin-top:4px;font-weight:600">&#11088; IS_STAR_DAY=1 &mdash; highest CASA in branch yesterday</div>';
+  html += '<div style="font-size:12px;color:#6b7a99;margin-top:6px;font-style:italic">Replicate today: share what they did in the first 5 minutes of this huddle.</div>';
+  html += '</div>';
+
+  // Block 4 — Blocker Board (★ real data from huddle_blockers.csv)
+  html += '<div class="hblock">';
+  html += '<div class="hblock-title">BLOCK 4 &mdash; BLOCKER BOARD</div>';
+  if (b.blocker_count === 0 && b.blocker_desc === '') {
+    html += '<div style="color:#1a7f5a;font-weight:600">&#9989; No open blockers. Clean run!</div>';
+  } else {
+    var typeColor = {'System':'#003087','Compliance':'#7c3aed','Process':'#e67e22','Staffing':'#d93025'};
+    var tColor = typeColor[b.blocker_type] || '#d93025';
+    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
+    html += '<span style="background:' + tColor + ';color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px">' + (b.blocker_type || 'Blocker') + '</span>';
+    html += '<span style="font-size:12px;color:#d93025;font-weight:600">' + b.blocker_count + ' open</span></div>';
+    if (b.blocker_desc) {
+      html += '<div style="font-size:13px;color:#444;background:#fff8f0;border-left:3px solid ' + tColor + ';padding:8px 10px;border-radius:0 6px 6px 0;margin-bottom:8px">&#9888;&#65039; ' + b.blocker_desc + '</div>';
+    }
+    html += '<div style="font-size:12px;color:#6b7a99;margin-top:4px">Escalate to RM if unresolved by 3pm</div>';
+  }
+  html += '</div>';
+
+  // Block 5 — Knowledge Pulse (full width)
+  html += '<div class="hblock" style="grid-column:1/-1">';
+  html += '<div class="hblock-title">BLOCK 5 &mdash; KNOWLEDGE PULSE</div>';
+  html += '<div style="display:inline-block;background:#e8f0fe;color:#003087;font-size:11px;padding:2px 8px;border-radius:10px;margin-bottom:8px">' + b.pulse.tag + '</div>';
+  html += '<div style="font-weight:600;margin-bottom:6px;font-size:13px">&#128204; ' + b.pulse.title + '</div>';
+  html += '<div style="font-size:12px;color:#444;line-height:1.6">' + b.pulse.body + '</div>';
+  html += '<div style="font-size:11px;color:#b36400;margin-top:8px;font-weight:600">Key limit: ' + b.pulse.limit + '</div>';
+  html += '</div>';
+
+  html += '</div>'; // /huddle-blocks
+  html += '<div class="huddle-footer">Generated by YES Bank AI Huddle Engine &middot; Stand up. Stay sharp. Make it count.</div>';
+  html += '</div>'; // /huddle-card
+
+  document.getElementById('huddle-brief-container').innerHTML = html;
+}
+
+// ─── INIT HUDDLE SELECTOR ─────────────────────────────────────────────────────
+function initHuddleSelector() {
+  var sel = document.getElementById('huddle-selector');
+  if (!sel || !huddleData) return;
+  sel.innerHTML = huddleData.briefs.map(function(b, i) {
+    return '<button class="brief-btn ' + (i === 0 ? 'active' : '') + '" ' +
+           'style="border-left:3px solid ' + b.rag_color + '" ' +
+           'onclick="selectHuddle(' + i + ', this)">' +
+           b.branch_name + '<br>' +
+           '<small style="color:' + b.rag_color + '">' + b.rag_icon + ' ' + b.rag + '</small>' +
+           '</button>';
+  }).join('');
+}
+
+function selectHuddle(idx, el) {
+  document.querySelectorAll('#huddle-selector .brief-btn').forEach(function(b) { b.classList.remove('active'); });
+  el.classList.add('active');
+  renderHuddleBrief(idx);
+}
+
+// ─── INIT COMPLIANCE TIER BARS ────────────────────────────────────────────────
+function initComplianceTiers() {
+  var el = document.getElementById('compliance-tier-bars');
+  if (!el || !huddleData) return;
+  el.innerHTML = huddleData.compliance_tiers.map(function(t) {
+    return '<div style="margin-bottom:10px">' +
+           '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">' +
+           '<span>' + t.tier + '</span>' +
+           '<span style="font-weight:700;color:' + t.color + '">' + t.count + ' (' + t.pct + '%)</span>' +
+           '</div>' +
+           '<div style="background:#f0f0f0;border-radius:4px;height:10px">' +
+           '<div style="width:' + t.pct + '%;background:' + t.color + ';height:10px;border-radius:4px"></div>' +
+           '</div></div>';
+  }).join('');
+}
+
+// ─── INIT TOP 5 HUDDLE TABLE ──────────────────────────────────────────────────
+function initTop5Huddle() {
+  var el = document.getElementById('top5-huddle-tbody');
+  if (!el || !huddleData) return;
+  el.innerHTML = huddleData.top5_branches.map(function(b) {
+    return '<tr><td><b>' + b.branch + '</b></td><td>' + b.cluster + '</td>' +
+           '<td><span style="color:#1a7f5a;font-weight:700">' + b.score + '</span>/100</td>' +
+           '<td>' + b.occurrence + '%</td></tr>';
+  }).join('');
+}
+
+// ─── INIT CLUSTER LEAGUE TABLE ────────────────────────────────────────────────
+function initClusterLeague() {
+  var el = document.getElementById('cluster-league-tbody');
+  if (!el || !huddleData) return;
+  el.innerHTML = huddleData.cluster_league.map(function(c, i) {
+    var esc = c.escalations > 0 ? '<span style="color:#d93025;font-weight:700">' + c.escalations + '</span>' : '0';
+    var flags = c.shame_flags > 20 ? '<span style="color:#d93025;font-weight:700">' + c.shame_flags + ' &#128680;</span>' : c.shame_flags;
+    return '<tr><td><b>' + (i+1) + '.</b> ' + c.CLUSTER + '</td>' +
+           '<td>' + c.branches + '</td>' +
+           '<td><span style="font-weight:700;color:' + c.score_color + '">' + c.avg_score + '</span>/100</td>' +
+           '<td>' + c.occurrence + '%</td>' +
+           '<td>' + flags + '</td>' +
+           '<td>' + esc + '</td></tr>';
+  }).join('');
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+renderOpportunities();
+renderClusters();
+renderBrief(0);
+showQuery(0, document.querySelector('.query-item'));
+initHuddleSelector();
+renderHuddleBrief(0);
+initComplianceTiers();
+initTop5Huddle();
+initClusterLeague();
+</script>
+</body>
+</html>

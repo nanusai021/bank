@@ -1,0 +1,7 @@
+"CATEGORY,TOPIC,KEY_LIMIT,RISK_LEVEL,EFFECTIVE_DATE,SOURCE_CIRCULAR,NOTES"
+"Capital Adequacy,Capital_Adequacy_Ratio,11.5%,High,2023-04-01,RBI/2023-24/XX,Includes CCB of 2.5%"
+"Capital Adequacy,Tier1_Capital_Ratio,9.0%,High,2023-04-01,RBI/2023-24/XX,"
+"Asset Quality,NPA_Threshold,2.5%,Medium,2025-03-31,RBI T&P 2025,System GNPA was 2.6%"
+"Liquidity,Liquidity_Coverage_Ratio,100%,Low,2021-04-01,RBI/2020-21/XX,"
+"Funding,CRR_Requirement,4.0%,Medium,2024-12-01,RBI/2024-25/XX,Cut from 4.5% Dec 2024"
+"Lending,Priority_Sector_Lending,40% of ANBC,Medium,2023-04-01,RBI/2023-24/PSL,Agriculture sub-target 18%"
